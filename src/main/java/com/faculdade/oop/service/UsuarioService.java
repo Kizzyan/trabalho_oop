@@ -1,39 +1,47 @@
 package com.faculdade.oop.service;
 
-import java.nio.CharBuffer;
-import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.faculdade.oop.model.Usuario;
+import com.faculdade.oop.model.UsuarioCadastroDto;
+import com.faculdade.oop.model.UsuarioLoginDto;
+import com.faculdade.oop.repository.UsuarioRepository;
+
 @Service
 public class UsuarioService {
-  @Autowired
-  private PasswordEncoder passwordEncoder;
-  @Autowired
-  private UsuarioRepository repositorio;
-  @Autowired
-  private UsuarioAssembler assembler;
+  private final UsuarioRepository usuarioRepository;
 
-  public UsuarioModel login(CredenciaisModel credenciais) {
-    Usuario usuario = repositorio.findByLogin(credenciais.login())
-        .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário não encontrado"));
-    if (passwordEncoder.matches(CharBuffer.wrap(credenciais.senha()), usuario.getSenha())) {
-      return assembler.toModel(usuario);
+  private final PasswordEncoder passwordEncoder;
 
-    }
-    throw new SenhaInvalidaException("Senha inválida");
+  private final AuthenticationManager authenticationManager;
+
+  public UsuarioService(
+      UsuarioRepository usuarioRepository,
+      AuthenticationManager authenticationManager,
+      PasswordEncoder passwordEncoder) {
+    this.authenticationManager = authenticationManager;
+    this.usuarioRepository = usuarioRepository;
+    this.passwordEncoder = passwordEncoder;
   }
 
-public UsuarioModel salvar(UsuarioInput usuarioInput) {
-Optional<Usuario> usuarioExistente = repositorio.findByLogin(usuarioInput.getLogin());
-if (usuarioExistente.isPresent() && (usuarioExistente.get().getId() != usuarioInput.getId())) {
-throw new EntidadeJaCadastradaException("Já há um usuario com mesmo login
-cadastrado");
-}
-Usuario usuarioResposta = assembler.toEntity(usuarioInput);
-usuarioResposta.setSenha(passwordEncoder.encode(usuarioInput.getSenha()));
-Usuario usuario = repositorio.save(usuarioResposta);
-return assembler.toModel(usuario);
-}
+  public Usuario signup(UsuarioCadastroDto input) {
+    Usuario usuario = new Usuario();
+    usuario.setNome(input.getNome());
+    usuario.setEmail(input.getEmail());
+    usuario.setSenha(passwordEncoder.encode(input.getSenha()));
+    return usuarioRepository.save(usuario);
+  }
+
+  public Usuario authenticate(UsuarioLoginDto input) {
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(
+            input.getEmail(),
+            input.getSenha()));
+
+    return usuarioRepository.findByEmail(input.getEmail())
+        .orElseThrow();
+  }
 }
