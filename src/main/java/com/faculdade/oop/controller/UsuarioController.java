@@ -16,8 +16,8 @@ import com.faculdade.oop.service.UsuarioService;
 @RequestMapping("/auth")
 @RestController
 public class UsuarioController {
+
     private final JwtService jwtService;
-    
     private final UsuarioService usuarioService;
 
     public UsuarioController(JwtService jwtService, UsuarioService usuarioService) {
@@ -25,7 +25,7 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/cadastro")
     public ResponseEntity<Usuario> register(@RequestBody UsuarioCadastroDto usuarioCadastroDto) {
         Usuario registeredUsuario = usuarioService.signup(usuarioCadastroDto);
 

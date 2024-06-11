@@ -22,8 +22,11 @@ import jakarta.validation.Valid;
 @RequestMapping("/produtos")
 public class ProdutoController {
 
-  @Autowired
-  private ProdutoService service;
+  private final ProdutoService service;
+
+  public ProdutoController(ProdutoService service) {
+    this.service = service;
+  }
 
   @GetMapping("/listar")
   public ResponseEntity<List<Produto>> findAll() {
